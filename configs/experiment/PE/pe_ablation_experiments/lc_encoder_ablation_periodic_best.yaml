@@ -1,0 +1,121 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /data: fpv2
+  - override /model: atat_new
+  - override /callbacks: default
+  - override /trainer: default
+  - override /hydra/launcher: ray
+  
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+exp_name: "LC_Encoder_Ablation_MLPs"
+tags: ['lc','ablation']
+
+seed: 42
+test: False
+trainer:
+  min_epochs: 1
+  max_epochs: 50
+  precision: 'bf16-mixed'
+  log_every_n_steps: 1
+  accelerator: gpu
+  #devices: [0,1]
+  # strategy: ddp  # DDP requires multiple GPUs, commented out for single GPU
+  #accumulate_grad_batches: 1
+
+
+callbacks:
+  early_stopping:
+    patience: 15
+
+
+
+model:
+  #class_names: ['AGN', 'EB/EW', 'Blazar', 'CEP', 'LPV', 'CV/Nova', 'Periodic-Other', 'Microlensing', 'QSO', 'DSCT', 'EA', 'RRLab', 'RSCVn', 'RRLc', 'SLSN', 'SNII', 'SNIbc', 'SNIIn', 'SNIa', 'TDE', 'YSO']
+  #class_names_order: ['SNIa', 'SNIbc', 'SNII', 'SNIIn', 'SLSN', 'TDE', 'Microlensing', 'QSO', 'AGN', 'Blazar', 'YSO', 'CV/Nova', 'LPV', 'EA', 'EB/EW', 'Periodic-Other', 'RSCVn', 'CEP', 'RRLab', 'RRLc', 'DSCT']
+  #criterion: focal_loss
+  warmup_epochs: 5
+  class_names: ['CEP', 'DSCT', 'EA', 'EB/EW', 'LPV', 'Periodic-Other', 'RRLab', 'RRLc', 'RSCVn']
+  use_tabular: false
+  use_lightcurve: true
+  compile: false
+  num_classes: 9
+  lc_net:
+    embedding_size: 128
+    num_encoders: 3
+    k_sparse_percentage: 0
+    time_encoder:
+      use_conv_mag: true
+      use_rate: true 
+      use_time_diff: true
+      use_abs_time_mlp: false
+      use_abs_mag_mlp: false
+      use_mag_diff: false
+      fusion_strategy: "mlp"
+      mlp_layers: 2
+      normalize_embeddings: false
+
+  lc_classifier:
+    _target_: src.models.components.classifiers.LinearClassifier
+    num_classes: ${model.num_classes}
+    dropout: 0.2
+    embedding_size: 128
+
+      
+  feat_net:
+    use_features: false
+    use_metadata: false
+  optimizer:
+    _target_: torch.optim.AdamW
+    #_target_: lion_pytorch.Lion
+    _partial_: true
+    lr: 0.0001
+    weight_decay: 0.001
+    #weight_decay: 0.01
+    betas: [0.9, 0.98]
+    eps: 1e-8
+    #use_triton: true
+    
+
+data:
+  sequence_type: full
+  subset_name: periodic
+  max_length: 2047
+  batch_size: 128
+  use_features: ${model.feat_net.use_features}
+  use_metadata: ${model.feat_net.use_metadata}
+  normalize_tab: ${model.use_tabular}
+  mta: false
+  eval_time: [8,16,32,64,128,256,512,1024,None]
+
+
+logger:
+  wandb:
+    project: 'LC_Encoder_Ablation_Individual'
+    tags: ${tags}
+    group: "individual"
+    
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      ++model.lc_net.time_encoder.normalization_type: rms,layer
+      +data.split: 0,1,2,3,4
+      
+  launcher:
+    ray:
+      init:
+        num_gpus: 1
+        num_cpus: 16
+        runtime_env:
+          env_vars:
+            CUDA_VISIBLE_DEVICES: "1"
+      remote:
+        num_gpus: 0.33  # Cada trabajo usa 0.33 GPU (3 por GPU física)
+        max_calls: 3   # 3 procesos paralelos

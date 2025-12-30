@@ -1,0 +1,49 @@
+_target_: src.models.atat_module.ATATLitModule
+
+use_tabular: false
+use_lightcurve: false
+
+num_classes: 21
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 0.0001
+
+
+lc_net:
+  _target_: src.models.components.atat_lightcurve_og.ATATLightcurve
+  num_heads: 4
+  dropout: 0.1
+  embedding_size: 192
+  num_encoders: 3
+  num_harmonics: 64
+
+
+feat_net:
+  _target_: src.models.components.atat_features_og.ATATFeatures
+  num_heads: 4
+  dropout: 0.1
+  embedding_size: 128
+  use_features: true
+  use_metadata: true
+  num_features: 191
+  num_metadata: 8
+  num_encoders: 3
+  
+
+mix_classifier:
+  _target_: src.models.components.classifiers.MixClassifier
+  num_classes: ${model.num_classes}
+  dropout: 0.1
+  embedding_size: 320
+
+feat_classifier:
+  _target_: src.models.components.classifiers.LinearClassifier
+  num_classes: ${model.num_classes}
+  embedding_size: ${model.feat_net.embedding_size}
+lc_classifier:
+  _target_: src.models.components.classifiers.LinearClassifier
+  num_classes: ${model.num_classes}
+  embedding_size: ${model.lc_net.embedding_size}
+# compile model for faster training with pytorch 2.0
+compile: false

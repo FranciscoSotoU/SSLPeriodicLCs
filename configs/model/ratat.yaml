@@ -1,0 +1,72 @@
+_target_: src.models.ratat_module.ATATLitModule
+
+use_tabular: false
+use_lightcurve: false
+
+num_classes: 1
+plot_all_epochs_cms: false
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 0.001
+  weight_decay: 0.001
+  betas: [0.9, 0.98]
+
+lc_net:
+  _target_: src.models.components.atat_lightcurve_new.ATATLightcurve
+  time_encoder:
+    _target_: src.models.components.transformer.encoders.FlexiblePositionalEncoderHandler
+    embedding_size: 128
+    seq_length: 2048
+    num_bands: 2
+    reduced_size_factor: 2
+    dropout: 0.1
+    use_sinusoidal: false
+    use_conv_mag: true
+    use_mag_diff: false
+    use_time_diff: true
+    use_rate: true
+    use_band_embedding: false
+    use_abs_time_mlp: false
+    use_abs_mag_mlp: false
+    fusion_strategy: "mlp"
+    mlp_layers: 2
+    normalize_embeddings: false
+    
+  num_heads: 4
+  dropout: 0.2
+  prenorm: true
+  embedding_size: 128
+  k_sparse_percentage: 0.0
+  num_encoders: 3
+
+feat_net:
+  _target_: src.models.components.atat_features.ATATFeatures
+  num_heads: 4
+  dropout: 0.2
+  prenorm: true
+  embedding_size: 128
+  use_features: true
+  use_metadata: true
+  num_features: 191
+  num_metadata:  8
+  k_sparse_percentage: 0.0
+  num_encoders: 3
+  
+
+mix_regressor:
+  _target_: src.models.components.regressors.MixRegressor
+  num_classes: ${model.num_classes}
+  dropout: 0.2
+  embedding_size: 256
+
+feat_regressor:
+  _target_: src.models.components.regressors.LinearRegressor
+  num_classes: ${model.num_classes}
+  embedding_size: ${model.feat_net.embedding_size}
+lc_regressor:
+  _target_: src.models.components.regressors.LinearRegressor
+  num_classes: ${model.num_classes}
+  embedding_size: ${model.lc_net.embedding_size}
+# compile model for faster training with pytorch 2.0
+compile: false

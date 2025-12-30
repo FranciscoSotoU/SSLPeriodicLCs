@@ -1,0 +1,29 @@
+_target_: src.models.vicreg_module.VICRegLitModule
+
+inv_loss_weight: 5.0
+cov_loss_weight: 1.0
+std_loss_weight: 25.0
+
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 0.0005
+  weight_decay: 0.01
+  betas: [0.9, 0.98]
+
+
+network:
+  _target_: src.models.components.atat_lightcurve_og.ATATLightcurve
+  num_heads: 4
+  dropout: 0.1
+  embedding_size: 192
+  num_encoders: 3
+  num_harmonics: 64
+  
+projector:
+  _target_: src.models.components.projectors.MLPProjector
+  embedding_size: ${model.network.embedding_size}
+  projection_size: 512
+  num_layers: 2
+  dropout: 0.2
+compile: false

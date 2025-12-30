@@ -1,0 +1,84 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /data: fpv2
+  - override /model: atat_patches
+  - override /callbacks: default
+  - override /trainer: default
+  - override /hydra: ray
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+exp_name: "DiViT_Periodic_VICReg_MM"
+tags: ['divit','periodic_classes','multimodal','full']
+
+seed: 41
+test: true
+trainer:
+  min_epochs: 1
+  max_epochs: 200
+  precision: 'bf16-mixed'
+  log_every_n_steps: 1
+  accelerator: gpu
+  devices: [0]
+
+
+model:
+  pre_trained_lc_path: /home/fsoto/Documents/LCsSSL/logs/pre_trained_models/VICReg_divit
+  class_names: ['CEP', 'DSCT', 'EA', 'EB/EW', 'LPV', 'Periodic-Other', 'RRLab', 'RRLc', 'RSCVn']
+  freeze_lc_encoder: false
+  use_tabular: true
+  use_lightcurve: true
+  compile: false
+  num_classes: 9
+  warmup_epochs: 10
+  lc_net:
+    patch_size: 8
+
+data:
+  sequence_type: full
+  subset_name: periodic
+  max_length: 2048
+  batch_size: 128
+  num_workers: 12
+  use_features: ${model.use_tabular}
+  use_metadata: ${model.use_tabular}
+  normalize_tab: ${model.use_tabular}
+  mta: true
+  eval_time: [8,16,32,64,128,256,512,1024,None]
+  patch_size: 8
+  use_collate: true
+
+
+
+logger:
+  wandb:
+    project: "Astronomy-Classification-Periodic"
+    tags: ${tags}
+    group: 'DiViT_VICReg'
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      ++data.split: 0,1,2,3,4
+      ++model.pre_trained_iteration: 0,1,2,3,4
+
+
+  launcher:
+    ray:
+      init:
+        num_gpus: 1
+        num_cpus: 16
+        runtime_env:
+          env_vars:
+            CUDA_VISIBLE_DEVICES: "1"
+      remote:
+        num_gpus: 0.33
+        max_calls: 3
+
+      
+     

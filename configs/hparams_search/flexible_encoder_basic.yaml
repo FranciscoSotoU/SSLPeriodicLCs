@@ -1,0 +1,63 @@
+# @package _global_
+
+# example hyperparameter optimization for flexible positional encoder with Optuna:
+# python train.py -m hparams_search=flexible_encoder_optuna experiment=your_experiment
+
+defaults:
+  - override /hydra/sweeper: optuna
+  - override /hydra/launcher: ray
+
+# choose metric which will be optimized by Optuna
+# make sure this is the correct name of some metric logged in lightning module!
+optimized_metric: "val/loss"
+
+# here we define Optuna hyperparameter search
+# it optimizes for value returned from function with @hydra.main decorator
+# docs: https://hydra.cc/docs/next/plugins/optuna_sweeper
+hydra:
+  mode: MULTIRUN # set hydra to multirun by default if this config is attached
+
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+
+    # storage URL to persist optimization results
+    # for example, you can use SQLite if you set 'sqlite:///example.db'
+    #storage: sqlite:///optuna_study.db
+
+    # name of the study to persist optimization results
+    #study_name: 'EncoderAblationStudy_${now:%Y%m%d_%H%M%S}'
+
+    # number of parallel workers
+    n_jobs: 3
+
+    # 'minimize' or 'maximize' the objective
+    direction: minimize
+
+    # total number of runs that will be executed
+    #n_trials: 100
+
+    # choose Optuna hyperparameter sampler
+    # you can choose bayesian sampler (tpe), random search (without optimization), grid sampler, and others
+    # docs: https://optuna.readthedocs.io/en/stable/reference/samplers.html
+    #sampler:
+    #  _target_: optuna.samplers.TPESampler
+    #  seed: 1234
+    #  n_startup_trials: 20 # number of random sampling runs before optimization starts
+
+    # define hyperparameter search space
+    params:
+      # Flexible Encoder Boolean Parameters (shared for both bands)
+      model.lc_net.time_encoder.use_mag_diff: choice(true, false)
+      model.lc_net.time_encoder.use_abs_time_mlp: choice(true, false)
+      model.lc_net.time_encoder.use_abs_mag_mlp: choice(true, false)
+
+  launcher:
+    ray:
+      init:
+        num_gpus: 1
+        runtime_env:
+          env_vars:
+            CUDA_VISIBLE_DEVICES: "0"
+      remote:
+        num_gpus: 0.33  # Cada trabajo usa 0.33 GPU (3 por GPU física)
+        max_calls: 3   # 3 procesos paralelos

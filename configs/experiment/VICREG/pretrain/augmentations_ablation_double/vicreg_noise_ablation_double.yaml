@@ -1,0 +1,61 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=augmentations_ablation/vicreg_noise_ablation_double
+
+defaults:
+  - override /data: fpv2_ssl
+  - override /model: vicreg_lc
+  - override /callbacks: default
+  - override /trainer: default
+  - override /hydra: ray
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+exp_name: "VICReg_Noise_Ablation_Double"
+tags: ['vicreg_lc','periodic','lcs','full','noise', 'random_noise']
+test: False
+seed: 42
+
+trainer:
+  min_epochs: 1
+  max_epochs: 50
+  precision: 'bf16-mixed'
+  log_every_n_steps: 1
+  accelerator: gpu
+  devices: [0]
+
+model:
+  warmup_epochs: 10
+    
+data:
+  sequence_type: full
+  max_length: 511
+  batch_size: 512
+  # Recommended configuration for light curve VICReg - Random Noise focus
+  transform:
+    transform_list:
+      - ${first_transform}
+      - ${second_transform}
+    masking_prob: 1
+    channel_shuffling_prob: 1
+    random_mask_prob: 1
+    random_noise_prob: 1
+    signal_resampling_prob: 1
+    time_shift_prob: 1
+
+  filter_subset: Periodic
+  
+logger:
+  wandb:
+    project: "VICReg-LightCurves-Augmentations-Ablation"
+    tags: ${tags}
+    group: "${first_transform}_${second_transform}"
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+     ++second_transform: channel_shuffle,random_mask,resampling,time_shift
+     ++first_transform: random_noise
+     ++data.split: 0,1,2,3,4

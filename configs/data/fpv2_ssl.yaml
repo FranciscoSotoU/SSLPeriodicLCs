@@ -1,0 +1,13 @@
+_target_: src.data.fp_unsupervised_datamodule.FPUSDatamodule
+data_dir: ${paths.data_dir}
+data_name: ssl_data_2048/final/dataset # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
+num_workers: 8
+pin_memory: true
+max_length: 2047
+subset_name: periodic
+transform:
+  _target_: src.data.components.augmentations.timeseries.TransformModule
+  mode: linear
+transform_prime:
+  _target_: src.data.components.augmentations.timeseries.TransformModule
+  mode: linear

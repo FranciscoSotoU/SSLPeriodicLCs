@@ -1,0 +1,39 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - data: fpv2 # choose datamodule with `test_dataloader()` for evaluation
+  - logger: null
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+  - model: sm_mhspanr
+
+trainer:
+  devices: [1]
+model:
+  net:
+    num_classes: 9
+  classifier:
+    _target_: src.models.components.classifiers.mlp_classifier.MLPClassifier
+    embedding_size: 512
+    num_encoders: 3
+    num_classes: 9
+  compile: true
+data:
+  max_length: 400
+  batch_size: 16
+  random_mask: true
+  use_reduced: false
+  data_name: forced_photometry_v1.h5
+  
+task_name: "eval"
+exp_name: "mhspa_exp"
+tags: ['baseline','200','fixed','fpv1']
+#classes: ["Ceph", "EA", "EBEW", "RRLc", "RRLab"]
+baseline_f1s: [0.8405351709393142, 0.8279121167361373, 0.8461507132618731, 0.8398537854037235, 0.8437644587833956] 
+classes: ['CEP', 'DSCT', 'EA', 'EB/EW', 'LPV', 'Periodic-Other', 'RRLab', 'RRLc', 'RSCVn']
+# passing checkpoint path is necessary for evaluation
+ckpt_path: /home/fsoto/Documents/LCsSSL/logs/train/multiruns/mhspa_exp
+

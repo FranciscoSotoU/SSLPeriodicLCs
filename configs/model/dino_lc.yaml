@@ -1,0 +1,72 @@
+_target_: src.models.dino_module.DINOLitModule
+
+# DINO-specific hyperparameters
+student_temp: 0.1
+teacher_temp: 0.01
+warmup_teacher_temp: 0.04
+teacher_temp_warmup_epochs: 30
+teacher_temp_schedule: "warmup_cosine"
+momentum_teacher: 0.985
+norm_last_layer: false
+center_momentum: 0.9
+warmup_epochs: 10
+num_crops: 10
+freeze_last_layer: 0  
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 0.001
+  weight_decay: 0.01
+  betas: [0.9, 0.98]
+
+network:
+  _target_: src.models.components.patches_lightcurve.PatchedLightcurve
+  num_heads: 8
+  dropout: 0.1
+  prenorm: true
+  embedding_size: 128
+  k_sparse_percentage: 0.0
+  num_encoders: 3
+  patch_size: 8
+  num_bands: 2
+  num_crops: 10
+  
+  time_encoder:
+    _target_: src.models.components.transformer.encoders.FlexiblePositionalEncoderHandler
+    embedding_size: 128
+    seq_length: 2048
+    num_bands: 2
+    reduced_size_factor: 2
+    dropout: 0.1
+    use_sinusoidal: false
+    use_conv_mag: true
+    use_mag_diff: false
+    use_time_diff: true
+    use_rate: true
+    use_band_embedding: false
+    use_abs_time_mlp: false
+    use_abs_mag_mlp: false
+    fusion_strategy: "mlp"
+    mlp_layers: 2
+    normalize_embeddings: false
+
+head_proj: 4096
+head_hidden: 2048
+head_bottleneck: 256
+head_nlayers: 3
+head_student:
+  _target_: src.models.components.dino_head.DINOHead
+  embedding_size: ${model.network.embedding_size}
+  projection_size: ${model.head_proj}
+  hidden_size: ${model.head_hidden}
+  bottleneck_dim: ${model.head_bottleneck}
+  nlayers: ${model.head_nlayers}
+  norm_last_layer: false
+head_teacher:
+  _target_: src.models.components.dino_head.DINOHead
+  embedding_size: ${model.network.embedding_size}
+  projection_size: ${model.head_proj}
+  hidden_size: ${model.head_hidden}
+  bottleneck_dim: ${model.head_bottleneck}
+  nlayers: ${model.head_nlayers}
+compile: false

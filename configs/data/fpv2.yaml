@@ -1,0 +1,7 @@
+_target_: src.data.fpv2_datamodule.FPV2DataModule
+data_dir: ${paths.data_dir}
+data_name: alerce_data/final/dataset # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
+num_workers: 12
+pin_memory: true
+balance_sampler: true
+
