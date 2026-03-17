@@ -1,0 +1,95 @@
+# @package _global_
+
+defaults:
+  - override /data: fpv2
+  - override /model: atat_new
+  - override /callbacks: default
+  - override /trainer: default
+  - override /hydra: ray
+
+exp_name: "DiffT_Long_Percentages_PT_Multimodal"
+tags: ['atat_modified','periodic_classes','multimodal','full','pretrained', 'vicreg','linearCLF']
+
+seed: 42
+test: true
+trainer:
+  min_epochs: 1
+  max_epochs: 200
+  precision: 'bf16-mixed'
+  log_every_n_steps: 1
+  accelerator: gpu
+
+model:
+  pre_trained_lc_path: /home/fsoto/Documents/SSLPeriodicLCs/logs/train/multiruns/DiffT_VICReg_Lightcurves_2026-01-22_07-13-41
+  class_names: ['CEP', 'DSCT', 'EA', 'EB/EW', 'LPV', 'Periodic-Other', 'RRLab', 'RRLc', 'RSCVn']
+  freeze_lc_encoder: false
+  use_tabular: true
+  use_lightcurve: true
+  compile: false
+  num_classes: 9
+  warmup_epochs: 10
+  feat_net:
+    num_features: 26
+data:
+  sequence_type: full
+  subset_name: periodic
+  max_length: 2047
+  batch_size: 128
+  num_workers: 12
+  use_features: ${model.use_tabular}
+  use_metadata: ${model.use_tabular}
+  normalize_tab: ${model.use_tabular}
+  mta: true
+  eval_time: [8,16,32,64,128,256,512,1024,None]
+  selected_features:
+  - Multiband_period_12
+  - g_W2
+  - r_W2
+  - g_r_max_corr_12
+  - g_W3
+  - g_r_mean_12
+  - g_r_max_12
+  - GP_DRW_tau_1
+  - g_r_mean_corr_12
+  - IAR_phi_1
+  - Amplitude_1
+  - ExcessVar_1
+  - Meanvariance_1
+  - r_W3
+  - Std_1
+  - GP_DRW_sigma_1
+  - GP_DRW_tau_2
+  - PercentAmplitude_1
+  - SF_ML_amplitude_1
+  - SPM_A_1
+  - Gskew_1
+  - Q31_1
+  - Autocor_length_1
+  - IAR_phi_2
+  - SF_ML_gamma_1
+  - Amplitude_2
+
+logger:
+  wandb:
+    project: "Paper-Periodic-LightCurves-Classification"
+    tags: ${tags}
+    group: "DiffT-Long-Percentages-PT-Multimodal"
+
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      ++model.pre_trained_iteration: 0,1,2,3,4
+      ++data.split: 0,1,2,3,4
+      ++data.percentage: 0.01,0.1,0.25,0.5,1.0
+  launcher:
+    ray:
+      init:
+        num_gpus: 2
+        num_cpus: 16
+        runtime_env:
+          env_vars:
+            CUDA_VISIBLE_DEVICES: "0,1"
+      remote:
+        num_gpus: 0.33
+        max_calls: 6

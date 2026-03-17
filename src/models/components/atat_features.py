@@ -64,7 +64,6 @@ class ATATFeatures(nn.Module):
             tabular_feat = torch.cat(tabular_, dim=1).unsqueeze(-1)
         else:
             tabular_feat = tabular_[0].unsqueeze(-1)
-            
         batch_size, _, _ = tabular_feat.size()
         token = self.token_feat(batch_size)
         tabular_mask = torch.ones_like(tabular_feat)

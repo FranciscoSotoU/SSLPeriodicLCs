@@ -1,0 +1,19 @@
+\begin{table}[h]
+\centering
+\caption{Test F1 Performance Comparison (mean $\pm$ std). Bold: pretrained significantly better than scratch. $^\dagger$: DiffT scratch significantly different from ATAT scratch (p $<$ 0.05).}
+\label{tab:model_comparison}
+\begin{tabular}{|c|cc|cc|}
+\hline
+\multirow{2}{*}{\% Data} & \multicolumn{2}{c|}{ATAT (baseline)} & \multicolumn{2}{c|}{DiffT} \\
+\cline{2-5}
+ & Scratch & Pretrained & Scratch & Pretrained \\
+\hline
+1 & 0.147 $\pm$ 0.048 & \textbf{0.312 $\pm$ 0.020} & 0.320 $\pm$ 0.056$^\dagger$ & \textbf{0.526 $\pm$ 0.019} \\
+10 & 0.433 $\pm$ 0.011 & \textbf{0.568 $\pm$ 0.009} & 0.659 $\pm$ 0.011$^\dagger$ & \textbf{0.739 $\pm$ 0.006} \\
+25 & 0.531 $\pm$ 0.010 & \textbf{0.620 $\pm$ 0.008} & 0.731 $\pm$ 0.005$^\dagger$ & \textbf{0.782 $\pm$ 0.005} \\
+50 & 0.620 $\pm$ 0.009 & \textbf{0.659 $\pm$ 0.006} & 0.776 $\pm$ 0.005$^\dagger$ & \textbf{0.811 $\pm$ 0.004} \\
+100 & 0.684 $\pm$ 0.006 & \textbf{0.691 $\pm$ 0.007} & 0.813 $\pm$ 0.007$^\dagger$ & \textbf{0.834 $\pm$ 0.004} \\
+100 (Linear) & - & 0.504 $\pm$ 0.022 & - & 0.658 $\pm$ 0.003 \\
+\hline
+\end{tabular}
+\end{table}

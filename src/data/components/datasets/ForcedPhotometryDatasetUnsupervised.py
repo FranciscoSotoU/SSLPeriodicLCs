@@ -83,6 +83,7 @@ class ForcedPhotometryDatasetUnsupervised(Dataset):
         return_snid = False,  # Whether to return SNID ( ID)
         patch_size = 0,
         dino = False,
+        filter=False,
         **kwargs,
     ):
         """
@@ -116,7 +117,14 @@ class ForcedPhotometryDatasetUnsupervised(Dataset):
         print(f"Using dataset split: {set_to_choose}")
         self.these_idx = h5_.get(set_to_choose)[:]
         logging.info(f"Using dataset split: {set_to_choose}")
-        
+        if filter:
+            logging.info("Applying filter for ndet6")
+            logging.info(f"Initial number of objects in split: {len(self.these_idx)}")
+            filter_mask = h5_.get('mask_ndet6')[:]
+            filter_indices = np.where(filter_mask == 1)[0]
+            self.these_idx = self.these_idx[np.isin(self.these_idx, filter_indices)]
+            logging.info(f"After filtering, {len(self.these_idx)} objects remain in the split.")
+            
         # Load dictionary info for feature names and evaluation times
         dict_info_path = os.path.join(os.path.dirname(data_path), "dict_info.yaml")
         with open(dict_info_path, "r") as f:

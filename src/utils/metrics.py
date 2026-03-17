@@ -9,6 +9,9 @@ from sklearn.metrics import roc_curve, confusion_matrix, precision_score, recall
 from mlxtend.evaluate import permutation_test
 from scipy import stats
 from .upload_metrics import upload_csv_to_sheet
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.serif'] = ['Times New Roman', 'Times', 'DejaVu Serif']
+plt.rcParams['font.size'] = 10
 def plot_confusion_matrix(cms: list, classes: list, save_path: str=None, cm_title: str='Confusion Matrix', f1_score=None, classes_order=None):
     """Plot confusion matrix.
 
@@ -33,10 +36,10 @@ def plot_confusion_matrix(cms: list, classes: list, save_path: str=None, cm_titl
             cm_std = cm_std[np.ix_(new_order, new_order)]
         classes = classes_order
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.colorbar()
+    #plt.colorbar()
     tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=90, fontsize=18)  # Increased fontsize
-    plt.yticks(tick_marks, classes, fontsize=18)  # Increased fontsize
+    plt.xticks(tick_marks, classes, rotation=20, fontsize=20)  # Increased fontsize
+    plt.yticks(tick_marks, classes, fontsize=20, rotation=70)  # Increased fontsize
 
     thresh = cm.max() / 2.
 
@@ -45,22 +48,22 @@ def plot_confusion_matrix(cms: list, classes: list, save_path: str=None, cm_titl
             texto = '{0:.2f}'.format(cm[i, j]) if len(cms) == 1 else '{0:.2f}'.format(cm[i, j]) + '\n$\\pm$' + '{0:.2f}'.format(cm_std[i, j])
             plt.text(j, i, texto,
                      horizontalalignment="center",
-                     verticalalignment="center", fontsize=18,  # Increased fontsize
+                     verticalalignment="center", fontsize=20 ,  # Increased fontsize
                      color="white" if cm[i, j] > thresh else "black")
 
     plt.tight_layout()
-    plt.ylabel('True', fontsize=20,labelpad=2)  # Increased fontsize
-    plt.xlabel('Predicted', fontsize=20,labelpad=2)  # Increased fontsize
+    plt.ylabel('True label', fontsize=15, labelpad=0)  # Increased fontsize, moved closer to ticks
+    plt.xlabel('Predicted label', fontsize=15, labelpad=0)  # Increased fontsize, moved closer to ticks
     
     # Main title
-    plt.title(cm_title, fontsize=20, pad=20)  # Increased fontsize and padding
+    #plt.title(cm_title, fontsize=24, pad=20)  # Increased fontsize and padding
     
     # Add F1 score as subtitle if provided
-    if f1_score is not None:
-        f1_mean, f1_std = f1_score
-        plt.title(f'{cm_title}\nF1 Score: {f1_mean:.3f} ± {f1_std:.3f}', fontsize=20, pad=20)
-    else:
-        plt.title(cm_title, fontsize=20, pad=20)  # Increased fontsize and padding
+    #if f1_score is not None:
+    #    f1_mean, f1_std = f1_score
+    #    plt.title(f'{cm_title}\nF1 Score: {f1_mean:.3f} ± {f1_std:.3f}', fontsize=20, pad=20)
+    #else:
+    #    plt.title(cm_title, fontsize=20, pad=20)  # Increased fontsize and padding
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')

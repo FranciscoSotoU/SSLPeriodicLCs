@@ -6,7 +6,6 @@ class Embedding(nn.Module):
         super(Embedding, self).__init__()
         self.tab_W_feat = nn.Parameter(torch.randn(1,length_size, embedding_size))
         self.tab_b_feat = nn.Parameter(torch.randn(1,length_size, embedding_size))
-        print(self.tab_W_feat.shape, self.tab_b_feat.shape)
 
     def forward(self, f):
         return self.tab_W_feat * f + self.tab_b_feat

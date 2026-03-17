@@ -1,6 +1,6 @@
 _target_: src.models.vicreg_module.VICRegLitModule
 
-inv_loss_weight: 5.0
+inv_loss_weight: 25.0
 cov_loss_weight: 1.0
 std_loss_weight: 25.0
 
@@ -9,7 +9,7 @@ optimizer:
   _partial_: true
   lr: 0.0005
   weight_decay: 0.01
-  betas: [0.9, 0.98]
+  betas: [0.9, 0.999]
 
 
 network:
@@ -22,23 +22,29 @@ network:
   k_sparse_percentage: 0.0
   num_encoders: 3
   time_encoder:
-    _target_: src.models.components.transformer.encoders.FlexiblePositionalEncoderHandler
+    _target_: src.models.components.transformer.encoders.FlexiblePositionalEncoderHandlerSimple
     embedding_size: 128
     seq_length: 2048
     num_bands: 2
-    reduced_size_factor: 2
+    reduced_size_factor: 0.5
     dropout: 0.1
+    kernel_size: 3
     use_sinusoidal: false
-    use_conv_mag: true
+    use_conv_mag:  true
+    use_conv_time: true
     use_mag_diff: false
-    use_time_diff: true
-    use_rate: true
+    use_time_diff: false
+    use_rate: false
     use_band_embedding: false
     use_abs_time_mlp: false
     use_abs_mag_mlp: false
+    use_conv_rate: true
+    use_conv_time_diff: false
+    use_conv_mag_diff: false
     fusion_strategy: "mlp"
     mlp_layers: 2
     normalize_embeddings: false
+
 projector:
   _target_: src.models.components.projectors.MLPProjector
   embedding_size: ${model.network.embedding_size}

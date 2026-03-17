@@ -490,7 +490,6 @@ class ChannelShuffling(object):
         if not apply_transform(self.prob):
             return data_dict
         bands = data_dict['bands']
-        
         bands_ = np.where(bands == 1, 2, np.where(bands == 2, 1, bands))
         data_dict['bands'] = bands_.astype(np.float32)
         return data_dict

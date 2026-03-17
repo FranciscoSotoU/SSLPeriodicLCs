@@ -2,7 +2,7 @@ _target_: src.models.vicreg_module.VICRegLitModule
 
 inv_loss_weight: 5.0
 cov_loss_weight: 1.0
-std_loss_weight: 25.0
+std_loss_weight: 5.0
 
 optimizer:
   _target_: torch.optim.AdamW

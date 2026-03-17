@@ -148,6 +148,8 @@ class ForcedPhotometryDatasetMM(Dataset):
                 )
                 logging.info(f'Removed {len(self.banned_idx)} samples due to insufficient detections')
                 logging.info(f"After filtering by detections: {len(self.these_idx)} samples remain")
+            if detections:
+                self.mask_detection = h5_.get("mask_detection")
             self.mask = h5_.get("mask") if not detections else self.mask_detection
             if detections:
                 logging.info(f"Using detection mask")
@@ -505,7 +507,7 @@ class ForcedPhotometryDatasetMM(Dataset):
 
             # Add the time-specific feature vector if using features
         if self.use_features:
-            data_dict['features'] = torch.from_numpy(self.df[f"features_{eval_time}"][idx_]).float()
+            data_dict['features'] = torch.from_numpy(self.df[f"features_{eval_time}"][idx_,self.selected_feat_index]).float()
 
         return data_dict
     def cut_to_max_time(self, data_dict):

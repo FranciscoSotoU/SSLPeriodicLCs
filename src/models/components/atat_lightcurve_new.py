@@ -34,6 +34,7 @@ class ATATLightcurve(nn.Module):
             if p.dim() > 1:
                 nn.init.normal_(p, 0, 0.02)
 
+
     def add_token(self, x, mask=None, token=None):
         """Add token to the beginning of sequence."""
         batch_size, seq_len, dim = x.size()

@@ -75,7 +75,8 @@ class ATATLitModule(LightningModule):
         concatenation_function: str = 'concat',
         UMAP: bool = False,
         plot_all_epochs_cms: bool = False,
-        dino: bool = False
+        dino: bool = False,
+        cross_attn: bool = False,
     ) -> None:
         """Initialize a `MNISTLitModule`.
 
@@ -92,7 +93,7 @@ class ATATLitModule(LightningModule):
         self.lc_net = lc_net if use_lightcurve else None
         self.feat_net = feat_net if use_tabular else None
         self.mix_classifier = mix_classifier if use_lightcurve and use_tabular else None
-        
+        self.cross_attn = cross_attn
         self.feat_classifier = feat_classifier if use_tabular else None
         self.lc_classifier = lc_classifier  if use_lightcurve else None
 
@@ -191,8 +192,12 @@ class ATATLitModule(LightningModule):
             feat_out = self.feat_net(**x)
             feat_branch_out = self.feat_classifier(feat_out)
         if self.lc_net is not None and self.feat_net is not None:
-            mix_token = self.concat_function([lc_out, feat_out])
-            mix_out = self.mix_classifier(mix_token)
+            if self.cross_attn:
+                mix_out = self.mix_classifier(lc_out, feat_out)
+            else:
+                mix_token = self.concat_function([lc_out, feat_out])
+                mix_out = self.mix_classifier(mix_token)
+                
         return lc_branch_out, feat_branch_out, mix_out, lc_out, feat_out
     def forward_lattent(self, x: torch.Tensor):
         """Perform a forward pass through the model `self.net` and return the latent representations.
@@ -540,6 +545,7 @@ class ATATLitModule(LightningModule):
         
 
         oid = batch['oid']
+        oid = [i.decode() for i in oid ]
         targets = batch['label'].long()
         
         if self.UMAP:
@@ -792,7 +798,7 @@ class ATATLitModule(LightningModule):
         missing_in_checkpoint = model_keys - checkpoint_keys
         unexpected_in_checkpoint = checkpoint_keys - model_keys
         
-        if len(missing_in_checkpoint) > len(model_keys) * 0.7:
+        if len(missing_in_checkpoint) > 0:
             print(f"WARNING: Too many missing keys ({len(missing_in_checkpoint)}/{len(model_keys)})")
             print("This suggests a major architecture mismatch.")
             print("Skipping checkpoint loading - model will use random initialization.")
@@ -800,16 +806,16 @@ class ATATLitModule(LightningModule):
         
         try:
             # Try to load the state dict
-            missing_keys, unexpected_keys = self.lc_net.load_state_dict(lc_state_dict, strict=False)
+            missing_keys, unexpected_keys = self.lc_net.load_state_dict(lc_state_dict, strict=True)
             
             if missing_keys:
                 print(f"Missing keys in checkpoint: {len(missing_keys)} keys")
                 if len(missing_keys) <= 5:
                     print(f"Missing keys: {missing_keys}")
             if unexpected_keys:
-                print(f"Unexpected keys in checkpoint: {len(unexpected_keys)} keys")
-                if len(unexpected_keys) <= 5:
-                    print(f"Unexpected keys: {unexpected_keys}")
+                print(f"⚠️  Keys in checkpoint but not in model ({len(unexpected_keys)}):")
+                for key in list(unexpected_in_checkpoint):
+                    print(f"   - {key}")
                 
             if len(missing_keys) == 0 and len(unexpected_keys) == 0:
                 
